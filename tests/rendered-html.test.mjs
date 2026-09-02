@@ -20,7 +20,7 @@ test("server-renders InterviewPilot", async () => {
 
   const html = await response.text();
   assert.match(html, /InterviewPilot/);
-  assert.match(html, /前端开发实习生/);
+  assert.match(html, /登录你的面试工作台/);
   assert.match(html, /模拟面试/);
   assert.doesNotMatch(html, /Your site is taking shape/);
 });
