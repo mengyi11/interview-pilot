@@ -18,6 +18,13 @@ const initialMessages: Message[] = [
   { id: 4, role: "coach", content: "继续追问：如果模型返回了非法的下一步状态，你会如何处理？" },
 ];
 
+const englishMessages: Message[] = [
+  { id: 1, role: "coach", content: "Using your InterviewPilot project as an example, how would you design state management for a multi-turn interview?" },
+  { id: 2, role: "candidate", content: "I would store the current question, message history, and scores, then decide whether to ask a follow-up or move to the next question." },
+  { id: 3, role: "feedback", content: "Good direction. Separate deterministic workflow state from model-generated content, and explain how you prevent duplicate questions." },
+  { id: 4, role: "coach", content: "Follow-up: how would you handle an invalid next-step state returned by the model?" },
+];
+
 const navItems: { id: View; icon: string; label: string }[] = [
   { id: "setup", icon: "⌂", label: "求职工作台" },
   { id: "report", icon: "◎", label: "岗位匹配" },
@@ -31,16 +38,17 @@ export default function Home() {
   const [view, setView] = useState<View>("setup");
   const [resumeName, setResumeName] = useState("");
   const [name, setName] = useState("孟一");
-  const [school, setSchool] = useState("新加坡国立大学");
+  const [school, setSchool] = useState("");
   const [company, setCompany] = useState("字节跳动");
   const [role, setRole] = useState("前端开发实习生");
   const [jd, setJd] = useState(sampleJd);
+  const [language, setLanguage] = useState("中文");
 
   if (!authenticated) {
     return <LoginScreen onLogin={() => setAuthenticated(true)} />;
   }
 
-  const context = { name, school, company, role, jd, resumeName };
+  const context = { name, school, company, role, jd, resumeName, language };
 
   return (
     <main className="app-shell">
@@ -54,12 +62,13 @@ export default function Home() {
             setCompany={setCompany}
             setRole={setRole}
             setJd={setJd}
+            setLanguage={setLanguage}
             setResumeName={setResumeName}
             onAnalyze={() => setView("report")}
           />
         )}
         {view === "report" && <ReportView context={context} onInterview={() => setView("interview")} />}
-        {view === "interview" && <InterviewView company={company} role={role} />}
+        {view === "interview" && <InterviewView company={company} role={role} language={language} />}
         {view === "history" && <HistoryView onOpen={() => setView("report")} />}
         {view === "mistakes" && <MistakesView onPractice={() => setView("interview")} />}
       </section>
@@ -124,14 +133,16 @@ function Sidebar({ view, setView, role, onLogout }: { view: View; setView: (view
   );
 }
 
-type Context = { name: string; school: string; company: string; role: string; jd: string; resumeName: string };
+type Context = { name: string; school: string; company: string; role: string; jd: string; resumeName: string; language: string };
 
-function SetupView({ context, setName, setSchool, setCompany, setRole, setJd, setResumeName, onAnalyze }: {
+function SetupView({ context, setName, setSchool, setCompany, setRole, setJd, setLanguage, setResumeName, onAnalyze }: {
   context: Context;
   setName: (value: string) => void; setSchool: (value: string) => void; setCompany: (value: string) => void;
-  setRole: (value: string) => void; setJd: (value: string) => void; setResumeName: (value: string) => void; onAnalyze: () => void;
+  setRole: (value: string) => void; setJd: (value: string) => void; setLanguage: (value: string) => void;
+  setResumeName: (value: string) => void; onAnalyze: () => void;
 }) {
   function pickResume(event: ChangeEvent<HTMLInputElement>) { setResumeName(event.target.files?.[0]?.name ?? ""); }
+  const jdLanguage = context.jd.trim() ? (/\p{Script=Han}/u.test(context.jd) ? "中文" : "English") : "等待输入";
   return (
     <div className="page-scroll">
       <header className="product-header"><div><p className="eyebrow">求职准备</p><h1>建立你的求职目标</h1><p>信息越完整，岗位分析与模拟面试就越贴近真实情况。</p></div><span className="save-state">✓ 已自动保存</span></header>
@@ -141,7 +152,7 @@ function SetupView({ context, setName, setSchool, setCompany, setRole, setJd, se
             <div className="step-heading"><span>01</span><div><h2>个人信息</h2><p>用于调整题目难度和面试表达建议</p></div><em>已完成</em></div>
             <div className="field-grid">
               <label className="form-field"><span>姓名或昵称</span><input value={context.name} onChange={(e) => setName(e.target.value)} /></label>
-              <label className="form-field"><span>学校</span><input value={context.school} onChange={(e) => setSchool(e.target.value)} /></label>
+              <label className="form-field"><span>学校（选填）</span><input value={context.school} onChange={(e) => setSchool(e.target.value)} placeholder="可以不填写" /></label>
               <label className="form-field"><span>学历阶段</span><select defaultValue="硕士"><option>本科</option><option>硕士</option><option>博士</option></select></label>
               <label className="form-field"><span>求职阶段</span><select defaultValue="实习"><option>实习</option><option>校招</option><option>社招</option></select></label>
             </div>
@@ -156,14 +167,13 @@ function SetupView({ context, setName, setSchool, setCompany, setRole, setJd, se
             <div className="field-grid">
               <label className="form-field"><span>目标公司</span><input value={context.company} onChange={(e) => setCompany(e.target.value)} /></label>
               <label className="form-field"><span>职位名称</span><input value={context.role} onChange={(e) => setRole(e.target.value)} /></label>
-              <label className="form-field"><span>面试类型</span><select defaultValue="技术一面"><option>技术一面</option><option>项目深挖</option><option>综合模拟</option></select></label>
-              <label className="form-field"><span>面试难度</span><select defaultValue="中等偏难"><option>基础</option><option>中等偏难</option><option>高压追问</option></select></label>
+              <label className="form-field"><span>面试语言</span><select value={context.language} onChange={(e) => setLanguage(e.target.value)}><option>中文</option><option>English</option><option>中英双语</option></select></label>
             </div>
           </div>
           <div className="step-card">
-            <div className="step-heading"><span>04</span><div><h2>粘贴岗位 JD</h2><p>我们会提取必备技能、加分项和岗位关键词</p></div><em>已填写</em></div>
+            <div className="step-heading"><span>04</span><div><h2>粘贴岗位 JD（中文或英文）</h2><p>系统会自动识别语言，并提取必备技能、加分项和岗位关键词</p></div><em>已填写</em></div>
             <textarea className="jd-input" value={context.jd} onChange={(e) => setJd(e.target.value)} aria-label="岗位 JD" />
-            <div className="jd-footer"><span>{context.jd.length} 个字符</span><button type="button" onClick={() => setJd(sampleJd)}>使用示例 JD</button></div>
+            <div className="jd-footer"><span>已识别：{jdLanguage} · {context.jd.length} 个字符</span><button type="button" onClick={() => setJd(sampleJd)}>使用示例 JD</button></div>
           </div>
           <button className="primary-button analyze-button" type="button" onClick={onAnalyze}>分析岗位匹配度 <span>→</span></button>
         </section>
@@ -180,7 +190,7 @@ function ReportView({ context, onInterview }: { context: Context; onInterview: (
   const skills = [["JavaScript", 88], ["React", 82], ["TypeScript", 72], ["浏览器与网络", 65], ["工程化", 58]] as const;
   return (
     <div className="page-scroll report-page">
-      <header className="product-header report-header"><div><p className="eyebrow">岗位匹配报告</p><h1>{context.company} · {context.role}</h1><p>基于简历、岗位 JD 与公开岗位要求生成 · 信息需要你最终确认</p></div><button className="secondary-button" type="button">导出报告</button></header>
+      <header className="product-header report-header"><div><p className="eyebrow">岗位匹配报告</p><h1>{context.company} · {context.role}</h1><p>已识别中英文 JD · 模拟面试语言：{context.language} · 信息需要你最终确认</p></div><button className="secondary-button" type="button">导出报告</button></header>
       <div className="report-hero">
         <div className="match-ring"><strong>76</strong><span>% 匹配</span></div>
         <div><p className="eyebrow">整体评价</p><h2>基础能力匹配，项目表达仍有提升空间</h2><p>你的 React 与 JavaScript 经历符合岗位主要求。建议重点补强工程化、性能监控和复杂业务结果的量化表达。</p><div className="tags"><span>前端基础扎实</span><span>AI 项目加分</span><span>工程化待加强</span></div></div>
@@ -196,8 +206,9 @@ function ReportView({ context, onInterview }: { context: Context; onInterview: (
   );
 }
 
-function InterviewView({ company, role }: { company: string; role: string }) {
-  const [messages, setMessages] = useState(initialMessages);
+function InterviewView({ company, role, language }: { company: string; role: string; language: string }) {
+  const isEnglish = language === "English";
+  const [messages, setMessages] = useState(isEnglish ? englishMessages : initialMessages);
   const [answer, setAnswer] = useState("");
   const [thinking, setThinking] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(2);
@@ -205,9 +216,9 @@ function InterviewView({ company, role }: { company: string; role: string }) {
   function submit(event?: FormEvent) {
     event?.preventDefault(); const value = answer.trim(); if (!value || thinking) return;
     setMessages((items) => [...items, { id: Date.now(), role: "candidate", content: value }]); setAnswer(""); setThinking(true);
-    window.setTimeout(() => { setMessages((items) => [...items, { id: Date.now() + 1, role: "feedback", content: "回答已记录。你说明了校验的必要性，还可以补充 Zod schema、重试次数和安全降级策略。" }, { id: Date.now() + 2, role: "coach", content: "下一题：React 中 key 的真正作用是什么？使用数组下标作为 key 可能产生什么问题？" }]); setQuestionIndex((n) => Math.min(5, n + 1)); setThinking(false); }, 800);
+    window.setTimeout(() => { setMessages((items) => [...items, { id: Date.now() + 1, role: "feedback", content: isEnglish ? "Your answer has been recorded. You explained why validation matters; you could also cover a Zod schema, retry limits, and a safe fallback." : "回答已记录。你说明了校验的必要性，还可以补充 Zod schema、重试次数和安全降级策略。" }, { id: Date.now() + 2, role: "coach", content: isEnglish ? "Next question: what is the real purpose of a key in React, and what problems can occur when using an array index as the key?" : "下一题：React 中 key 的真正作用是什么？使用数组下标作为 key 可能产生什么问题？" }]); setQuestionIndex((n) => Math.min(5, n + 1)); setThinking(false); }, 800);
   }
-  return <div className="interview-screen"><header className="topbar"><div><div className="eyebrow">模拟面试进行中</div><h1>{role}</h1></div><div className="topbar-actions"><div className="timer"><span /> 18:42</div><button className="quiet-button" type="button">结束面试</button></div></header><div className="progress-row"><div className="progress-copy"><span>第 {questionIndex} / 5 题</span><span>{progress}%</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div><div className="interview-grid"><section className="chat-panel"><div className="chat-scroll"><div className="session-note"><span>✦</span><div><strong>个性化面试计划已生成</strong><p>根据简历与 {company} 的目标 JD，重点考察项目深挖、React 和工程化。</p></div></div>{messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-avatar">{message.role === "candidate" ? "你" : message.role === "feedback" ? "✓" : "AI"}</div><div className="message-body"><div className="message-meta"><strong>{message.role === "candidate" ? "你的回答" : message.role === "feedback" ? "即时点评" : "AI 面试官"}</strong>{message.role === "feedback" && <span className="score-pill">7 / 10</span>}</div><p>{message.content}</p>{message.role === "feedback" && <a href="https://developer.mozilla.org/" target="_blank" rel="noreferrer">查看参考资料 · MDN</a>}</div></article>)}{thinking && <div className="thinking"><span /><span /><span />正在分析你的回答</div>}</div><div className="composer-wrap"><div className="suggestions"><button onClick={() => setAnswer("可以先给我一个提示吗？")} type="button">先给我一个提示</button><button onClick={() => setAnswer("请给我一段代码，我来分析。")} type="button">我想看示例代码</button><button onClick={() => setAnswer("暂时不会，请记录到错题本。")} type="button">跳过并记录</button></div><form className="composer" onSubmit={submit}><textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="像真实面试一样组织你的回答…" aria-label="输入你的回答" /><div className="composer-footer"><span>Enter 发送 · 支持连续追问</span><button disabled={!answer.trim() || thinking} type="submit">↑</button></div></form></div></section><aside className="insight-panel"><section className="insight-card role-card"><div className="card-heading"><span className="card-icon">◎</span><div><small>目标岗位</small><strong>{role}</strong></div></div><div className="company-line"><span className="company-logo">字</span>{company} · 技术</div><div className="tags"><span>React</span><span>TypeScript</span><span>工程化</span></div></section><section className="insight-card score-card"><div className="section-title"><strong>实时能力表现</strong><span>本场</span></div><div className="overall-score"><div><strong>72</strong><span>/ 100</span></div><p>当前表现稳定<br /><em>项目表达正在提升</em></p></div><div className="skill-list">{[["技术准确性", 78], ["知识完整性", 68], ["表达与逻辑", 76]].map(([label, value]) => <div className="skill-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><div className="skill-track"><span style={{ width: `${value}%` }} /></div></div>)}</div></section><section className="insight-card tip-card"><span>✦</span><div><strong>面试表达建议</strong><p>先给结论，再解释设计取舍，最后补充异常场景。</p></div></section></aside></div></div>;
+  return <div className="interview-screen"><header className="topbar"><div><div className="eyebrow">模拟面试进行中</div><h1>{role}</h1></div><div className="topbar-actions"><div className="timer"><span /> 18:42</div><button className="quiet-button" type="button">结束面试</button></div></header><div className="progress-row"><div className="progress-copy"><span>第 {questionIndex} / 5 题</span><span>{progress}%</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div><div className="interview-grid"><section className="chat-panel"><div className="chat-scroll"><div className="session-note"><span>✦</span><div><strong>个性化面试计划已生成</strong><p>根据简历与 {company} 的目标 JD，重点考察项目深挖、React 和工程化。面试语言：{language}。</p></div></div>{messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-avatar">{message.role === "candidate" ? "你" : message.role === "feedback" ? "✓" : "AI"}</div><div className="message-body"><div className="message-meta"><strong>{message.role === "candidate" ? "你的回答" : message.role === "feedback" ? "即时点评" : "AI 面试官"}</strong>{message.role === "feedback" && <span className="score-pill">7 / 10</span>}</div><p>{message.content}</p>{message.role === "feedback" && <a href="https://developer.mozilla.org/" target="_blank" rel="noreferrer">查看参考资料 · MDN</a>}</div></article>)}{thinking && <div className="thinking"><span /><span /><span />正在分析你的回答</div>}</div><div className="composer-wrap"><div className="suggestions"><button onClick={() => setAnswer(isEnglish ? "Could you give me a hint first?" : "可以先给我一个提示吗？")} type="button">先给我一个提示</button><button onClick={() => setAnswer(isEnglish ? "Please give me a code example to analyze." : "请给我一段代码，我来分析。")} type="button">我想看示例代码</button><button onClick={() => setAnswer(isEnglish ? "I don't know yet. Please add it to my review list." : "暂时不会，请记录到错题本。")} type="button">跳过并记录</button></div><form className="composer" onSubmit={submit}><textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={isEnglish ? "Answer as you would in a real interview…" : "像真实面试一样组织你的回答…"} aria-label="输入你的回答" /><div className="composer-footer"><span>Enter 发送 · 支持连续追问</span><button disabled={!answer.trim() || thinking} type="submit">↑</button></div></form></div></section><aside className="insight-panel"><section className="insight-card role-card"><div className="card-heading"><span className="card-icon">◎</span><div><small>目标岗位</small><strong>{role}</strong></div></div><div className="company-line"><span className="company-logo">字</span>{company} · 技术</div><div className="tags"><span>React</span><span>TypeScript</span><span>工程化</span></div></section><section className="insight-card score-card"><div className="section-title"><strong>实时能力表现</strong><span>本场</span></div><div className="overall-score"><div><strong>72</strong><span>/ 100</span></div><p>当前表现稳定<br /><em>项目表达正在提升</em></p></div><div className="skill-list">{[["技术准确性", 78], ["知识完整性", 68], ["表达与逻辑", 76]].map(([label, value]) => <div className="skill-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><div className="skill-track"><span style={{ width: `${value}%` }} /></div></div>)}</div></section><section className="insight-card tip-card"><span>✦</span><div><strong>面试表达建议</strong><p>先给结论，再解释设计取舍，最后补充异常场景。</p></div></section></aside></div></div>;
 }
 
 function HistoryView({ onOpen }: { onOpen: () => void }) {
