@@ -39,7 +39,6 @@ export default function Home() {
   const [resumeName, setResumeName] = useState("");
   const [name, setName] = useState("孟一");
   const [school, setSchool] = useState("");
-  const [company, setCompany] = useState("字节跳动");
   const [role, setRole] = useState("前端开发实习生");
   const [jd, setJd] = useState(sampleJd);
   const [language, setLanguage] = useState("中文");
@@ -48,7 +47,7 @@ export default function Home() {
     return <LoginScreen onLogin={() => setAuthenticated(true)} />;
   }
 
-  const context = { name, school, company, role, jd, resumeName, language };
+  const context = { name, school, role, jd, resumeName, language };
 
   return (
     <main className="app-shell">
@@ -59,7 +58,6 @@ export default function Home() {
             context={context}
             setName={setName}
             setSchool={setSchool}
-            setCompany={setCompany}
             setRole={setRole}
             setJd={setJd}
             setLanguage={setLanguage}
@@ -68,7 +66,7 @@ export default function Home() {
           />
         )}
         {view === "report" && <ReportView context={context} onInterview={() => setView("interview")} />}
-        {view === "interview" && <InterviewView company={company} role={role} language={language} />}
+        {view === "interview" && <InterviewView role={role} language={language} />}
         {view === "history" && <HistoryView onOpen={() => setView("report")} />}
         {view === "mistakes" && <MistakesView onPractice={() => setView("interview")} />}
       </section>
@@ -133,12 +131,12 @@ function Sidebar({ view, setView, role, onLogout }: { view: View; setView: (view
   );
 }
 
-type Context = { name: string; school: string; company: string; role: string; jd: string; resumeName: string; language: string };
+type Context = { name: string; school: string; role: string; jd: string; resumeName: string; language: string };
 
-function SetupView({ context, setName, setSchool, setCompany, setRole, setJd, setLanguage, setResumeName, onAnalyze }: {
+function SetupView({ context, setName, setSchool, setRole, setJd, setLanguage, setResumeName, onAnalyze }: {
   context: Context;
-  setName: (value: string) => void; setSchool: (value: string) => void; setCompany: (value: string) => void;
-  setRole: (value: string) => void; setJd: (value: string) => void; setLanguage: (value: string) => void;
+  setName: (value: string) => void; setSchool: (value: string) => void; setRole: (value: string) => void;
+  setJd: (value: string) => void; setLanguage: (value: string) => void;
   setResumeName: (value: string) => void; onAnalyze: () => void;
 }) {
   function pickResume(event: ChangeEvent<HTMLInputElement>) { setResumeName(event.target.files?.[0]?.name ?? ""); }
@@ -163,10 +161,9 @@ function SetupView({ context, setName, setSchool, setCompany, setRole, setJd, se
             <p className="privacy-note">⌁ 上传前会隐藏手机号、邮箱和地址；当前原型不会真正上传文件。</p>
           </div>
           <div className="step-card">
-            <div className="step-heading"><span>03</span><div><h2>目标公司与职位</h2><p>用于匹配岗位要求和规划面试范围</p></div><em>已填写</em></div>
+            <div className="step-heading"><span>03</span><div><h2>目标职位</h2><p>选择职位方向，用于匹配岗位要求和规划面试范围</p></div><em>已填写</em></div>
             <div className="field-grid">
-              <label className="form-field"><span>目标公司</span><input value={context.company} onChange={(e) => setCompany(e.target.value)} /></label>
-              <label className="form-field"><span>职位名称</span><input value={context.role} onChange={(e) => setRole(e.target.value)} /></label>
+              <label className="form-field"><span>职位名称</span><select value={context.role} onChange={(e) => setRole(e.target.value)}><option>前端开发实习生</option><option>后端开发实习生</option><option>全栈开发实习生</option><option>测试开发实习生</option><option>算法工程师实习生</option><option>数据分析实习生</option><option>产品经理实习生</option></select></label>
               <label className="form-field"><span>面试语言</span><select value={context.language} onChange={(e) => setLanguage(e.target.value)}><option>中文</option><option>English</option><option>中英双语</option></select></label>
             </div>
           </div>
@@ -190,7 +187,7 @@ function ReportView({ context, onInterview }: { context: Context; onInterview: (
   const skills = [["JavaScript", 88], ["React", 82], ["TypeScript", 72], ["浏览器与网络", 65], ["工程化", 58]] as const;
   return (
     <div className="page-scroll report-page">
-      <header className="product-header report-header"><div><p className="eyebrow">岗位匹配报告</p><h1>{context.company} · {context.role}</h1><p>已识别中英文 JD · 模拟面试语言：{context.language} · 信息需要你最终确认</p></div><button className="secondary-button" type="button">导出报告</button></header>
+      <header className="product-header report-header"><div><p className="eyebrow">岗位匹配报告</p><h1>{context.role}</h1><p>已识别中英文 JD · 模拟面试语言：{context.language} · 信息需要你最终确认</p></div><button className="secondary-button" type="button">导出报告</button></header>
       <div className="report-hero">
         <div className="match-ring"><strong>76</strong><span>% 匹配</span></div>
         <div><p className="eyebrow">整体评价</p><h2>基础能力匹配，项目表达仍有提升空间</h2><p>你的 React 与 JavaScript 经历符合岗位主要求。建议重点补强工程化、性能监控和复杂业务结果的量化表达。</p><div className="tags"><span>前端基础扎实</span><span>AI 项目加分</span><span>工程化待加强</span></div></div>
@@ -206,7 +203,7 @@ function ReportView({ context, onInterview }: { context: Context; onInterview: (
   );
 }
 
-function InterviewView({ company, role, language }: { company: string; role: string; language: string }) {
+function InterviewView({ role, language }: { role: string; language: string }) {
   const isEnglish = language === "English";
   const [messages, setMessages] = useState(isEnglish ? englishMessages : initialMessages);
   const [answer, setAnswer] = useState("");
@@ -218,11 +215,11 @@ function InterviewView({ company, role, language }: { company: string; role: str
     setMessages((items) => [...items, { id: Date.now(), role: "candidate", content: value }]); setAnswer(""); setThinking(true);
     window.setTimeout(() => { setMessages((items) => [...items, { id: Date.now() + 1, role: "feedback", content: isEnglish ? "Your answer has been recorded. You explained why validation matters; you could also cover a Zod schema, retry limits, and a safe fallback." : "回答已记录。你说明了校验的必要性，还可以补充 Zod schema、重试次数和安全降级策略。" }, { id: Date.now() + 2, role: "coach", content: isEnglish ? "Next question: what is the real purpose of a key in React, and what problems can occur when using an array index as the key?" : "下一题：React 中 key 的真正作用是什么？使用数组下标作为 key 可能产生什么问题？" }]); setQuestionIndex((n) => Math.min(5, n + 1)); setThinking(false); }, 800);
   }
-  return <div className="interview-screen"><header className="topbar"><div><div className="eyebrow">模拟面试进行中</div><h1>{role}</h1></div><div className="topbar-actions"><div className="timer"><span /> 18:42</div><button className="quiet-button" type="button">结束面试</button></div></header><div className="progress-row"><div className="progress-copy"><span>第 {questionIndex} / 5 题</span><span>{progress}%</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div><div className="interview-grid"><section className="chat-panel"><div className="chat-scroll"><div className="session-note"><span>✦</span><div><strong>个性化面试计划已生成</strong><p>根据简历与 {company} 的目标 JD，重点考察项目深挖、React 和工程化。面试语言：{language}。</p></div></div>{messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-avatar">{message.role === "candidate" ? "你" : message.role === "feedback" ? "✓" : "AI"}</div><div className="message-body"><div className="message-meta"><strong>{message.role === "candidate" ? "你的回答" : message.role === "feedback" ? "即时点评" : "AI 面试官"}</strong>{message.role === "feedback" && <span className="score-pill">7 / 10</span>}</div><p>{message.content}</p>{message.role === "feedback" && <a href="https://developer.mozilla.org/" target="_blank" rel="noreferrer">查看参考资料 · MDN</a>}</div></article>)}{thinking && <div className="thinking"><span /><span /><span />正在分析你的回答</div>}</div><div className="composer-wrap"><div className="suggestions"><button onClick={() => setAnswer(isEnglish ? "Could you give me a hint first?" : "可以先给我一个提示吗？")} type="button">先给我一个提示</button><button onClick={() => setAnswer(isEnglish ? "Please give me a code example to analyze." : "请给我一段代码，我来分析。")} type="button">我想看示例代码</button><button onClick={() => setAnswer(isEnglish ? "I don't know yet. Please add it to my review list." : "暂时不会，请记录到错题本。")} type="button">跳过并记录</button></div><form className="composer" onSubmit={submit}><textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={isEnglish ? "Answer as you would in a real interview…" : "像真实面试一样组织你的回答…"} aria-label="输入你的回答" /><div className="composer-footer"><span>Enter 发送 · 支持连续追问</span><button disabled={!answer.trim() || thinking} type="submit">↑</button></div></form></div></section><aside className="insight-panel"><section className="insight-card role-card"><div className="card-heading"><span className="card-icon">◎</span><div><small>目标岗位</small><strong>{role}</strong></div></div><div className="company-line"><span className="company-logo">字</span>{company} · 技术</div><div className="tags"><span>React</span><span>TypeScript</span><span>工程化</span></div></section><section className="insight-card score-card"><div className="section-title"><strong>实时能力表现</strong><span>本场</span></div><div className="overall-score"><div><strong>72</strong><span>/ 100</span></div><p>当前表现稳定<br /><em>项目表达正在提升</em></p></div><div className="skill-list">{[["技术准确性", 78], ["知识完整性", 68], ["表达与逻辑", 76]].map(([label, value]) => <div className="skill-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><div className="skill-track"><span style={{ width: `${value}%` }} /></div></div>)}</div></section><section className="insight-card tip-card"><span>✦</span><div><strong>面试表达建议</strong><p>先给结论，再解释设计取舍，最后补充异常场景。</p></div></section></aside></div></div>;
+  return <div className="interview-screen"><header className="topbar"><div><div className="eyebrow">模拟面试进行中</div><h1>{role}</h1></div><div className="topbar-actions"><div className="timer"><span /> 18:42</div><button className="quiet-button" type="button">结束面试</button></div></header><div className="progress-row"><div className="progress-copy"><span>第 {questionIndex} / 5 题</span><span>{progress}%</span></div><div className="progress-track"><span style={{ width: `${progress}%` }} /></div></div><div className="interview-grid"><section className="chat-panel"><div className="chat-scroll"><div className="session-note"><span>✦</span><div><strong>个性化面试计划已生成</strong><p>根据简历与目标职位 JD，重点考察项目深挖、React 和工程化。面试语言：{language}。</p></div></div>{messages.map((message) => <article className={`message ${message.role}`} key={message.id}><div className="message-avatar">{message.role === "candidate" ? "你" : message.role === "feedback" ? "✓" : "AI"}</div><div className="message-body"><div className="message-meta"><strong>{message.role === "candidate" ? "你的回答" : message.role === "feedback" ? "即时点评" : "AI 面试官"}</strong>{message.role === "feedback" && <span className="score-pill">7 / 10</span>}</div><p>{message.content}</p>{message.role === "feedback" && <a href="https://developer.mozilla.org/" target="_blank" rel="noreferrer">查看参考资料 · MDN</a>}</div></article>)}{thinking && <div className="thinking"><span /><span /><span />正在分析你的回答</div>}</div><div className="composer-wrap"><div className="suggestions"><button onClick={() => setAnswer(isEnglish ? "Could you give me a hint first?" : "可以先给我一个提示吗？")} type="button">先给我一个提示</button><button onClick={() => setAnswer(isEnglish ? "Please give me a code example to analyze." : "请给我一段代码，我来分析。")} type="button">我想看示例代码</button><button onClick={() => setAnswer(isEnglish ? "I don't know yet. Please add it to my review list." : "暂时不会，请记录到错题本。")} type="button">跳过并记录</button></div><form className="composer" onSubmit={submit}><textarea value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder={isEnglish ? "Answer as you would in a real interview…" : "像真实面试一样组织你的回答…"} aria-label="输入你的回答" /><div className="composer-footer"><span>Enter 发送 · 支持连续追问</span><button disabled={!answer.trim() || thinking} type="submit">↑</button></div></form></div></section><aside className="insight-panel"><section className="insight-card role-card"><div className="card-heading"><span className="card-icon">◎</span><div><small>目标岗位</small><strong>{role}</strong></div></div><div className="role-meta"><span className="role-meta-icon">语</span>{language}面试</div><div className="tags"><span>React</span><span>TypeScript</span><span>工程化</span></div></section><section className="insight-card score-card"><div className="section-title"><strong>实时能力表现</strong><span>本场</span></div><div className="overall-score"><div><strong>72</strong><span>/ 100</span></div><p>当前表现稳定<br /><em>项目表达正在提升</em></p></div><div className="skill-list">{[["技术准确性", 78], ["知识完整性", 68], ["表达与逻辑", 76]].map(([label, value]) => <div className="skill-row" key={label}><div><span>{label}</span><strong>{value}</strong></div><div className="skill-track"><span style={{ width: `${value}%` }} /></div></div>)}</div></section><section className="insight-card tip-card"><span>✦</span><div><strong>面试表达建议</strong><p>先给结论，再解释设计取舍，最后补充异常场景。</p></div></section></aside></div></div>;
 }
 
 function HistoryView({ onOpen }: { onOpen: () => void }) {
-  return <div className="page-scroll"><header className="product-header"><div><p className="eyebrow">训练记录</p><h1>历史面试</h1><p>回看每一次练习，观察能力变化。</p></div><button className="primary-button" type="button">＋ 新建面试</button></header><div className="summary-cards"><div><span>完成面试</span><strong>12</strong><small>本月 +4</small></div><div><span>平均得分</span><strong>74</strong><small className="positive">↑ 6 分</small></div><div><span>累计练习</span><strong>5.8h</strong><small>过去 30 天</small></div></div><section className="data-card"><div className="section-title"><h3>最近记录</h3><span>全部岗位</span></div><div className="history-table"><div className="table-row head"><span>岗位</span><span>模式</span><span>日期</span><span>得分</span><span /></div>{[["字节跳动 · 前端实习生", "综合模拟", "今天 18:42", "72"], ["通用 · React 工程师", "React 专项", "昨天", "76"], ["小红书 · 前端实习生", "项目深挖", "8 月 29 日", "68"]].map((row) => <button className="table-row" type="button" onClick={onOpen} key={row[0]}>{row.map((cell, index) => <span key={cell} className={index === 3 ? "table-score" : ""}>{cell}</span>)}<span>查看 →</span></button>)}</div></section></div>;
+  return <div className="page-scroll"><header className="product-header"><div><p className="eyebrow">训练记录</p><h1>历史面试</h1><p>回看每一次练习，观察能力变化。</p></div><button className="primary-button" type="button">＋ 新建面试</button></header><div className="summary-cards"><div><span>完成面试</span><strong>12</strong><small>本月 +4</small></div><div><span>平均得分</span><strong>74</strong><small className="positive">↑ 6 分</small></div><div><span>累计练习</span><strong>5.8h</strong><small>过去 30 天</small></div></div><section className="data-card"><div className="section-title"><h3>最近记录</h3><span>全部岗位</span></div><div className="history-table"><div className="table-row head"><span>岗位</span><span>模式</span><span>日期</span><span>得分</span><span /></div>{[["前端开发实习生", "综合模拟", "今天 18:42", "72"], ["React 工程师", "React 专项", "昨天", "76"], ["全栈开发实习生", "项目深挖", "8 月 29 日", "68"]].map((row) => <button className="table-row" type="button" onClick={onOpen} key={row[0]}>{row.map((cell, index) => <span key={cell} className={index === 3 ? "table-score" : ""}>{cell}</span>)}<span>查看 →</span></button>)}</div></section></div>;
 }
 
 function MistakesView({ onPractice }: { onPractice: () => void }) {
